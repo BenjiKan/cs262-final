@@ -18,14 +18,17 @@ def init_machine(config):
         conn, addr = s.accept()
         start_new_thread(consumer, (conn,addr,))
         print("consumer thread started for connection", addr)
+    # close connection
+    s.close()
+    print("server closed", addr)
 
 def consumer(conn,addr):
     # each machine listens on its own consumer thread, which initializes its queue
     print("consumer accepted connection" + str(addr)+"\n")
-    while True: # TODO: change this condition so that when wants to kill the process, it can
+    while True: 
         data = conn.recv(1024)
         dataVal = data.decode('ascii')
-        # msg_queue.append(dataVal)
+
 
 
 def producer(portVal1, portVal2):
@@ -36,7 +39,8 @@ def producer(portVal1, portVal2):
     port_second = int(portVal2)
     s1 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     s2 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    # sleepVal = 1.0/clock_rate
+
+    # TODO: keep track of which port is connected to which socket
 
     #sema acquire
     try:
@@ -45,73 +49,64 @@ def producer(portVal1, portVal2):
         s2.connect((host,port_second))
         print("Client-side connection success to port val:" + str(portVal2) + "\n")
 
-        # while True:
-        #     # update clock value immediately
-        #     global clock_value
-        #     clock_value += 1
+        while True:
+            # close old connections
+            if len(remove_port_queue) > 0:
+                old_port = remove_port_queue.pop()
+                print("old port received: ", old_port)
+                if old_port == port_first:
+                    s1.close()
+                    print("Client-side connection closed to port val:" + str(portVal1) + "\n")
+                elif old_port == port_second:
+                    s2.close()
+                    print("Client-side connection closed to port val:" + str(portVal2) + "\n")
 
-
-        #     # if msg_queue is not empty, then read the first message in the queue
-        #     if len(msg_queue) > 0:
-        #         msg = msg_queue.pop(0)
-        #         # if msg is greater than clock_value, then update clock_value
-        #         if int(msg) > clock_value:
-        #             clock_value = int(msg)
-  
-        #         logger.info("msg received, logical clock time: "+str(clock_value)+" queue length: "+str(len(msg_queue)))
-
-        #     # if msg_queue empty, generate own event and follow instructions   
-        #     else:
-        #         producer_run_random_event(logger, s1, s2)
+            # start up new connections
+            if len(add_port_queue) > 0:
+                new_port = add_port_queue.pop()
+                print("new port received: ", new_port)
+                s3 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+                s3.connect((host,new_port)) # 5555 not set up to listen yet
             
-        #     # wait before next action
-        #     time.sleep(sleepVal)
-
-    
 
     except socket.error as e:
         print ("Error connecting producer: %s" % e)
 
 
-# clock_rate = random.randint(1, 6)
-# clock_value = 0
-# msg_queue = []
-# events_prob = 10
 
 def machine(config):
     config.append(os.getpid())
-    # # initialize the logical clock value for the process
-    # global clock_value 
-    # clock_value = 0
 
-    # # initialize the queue for the process
-    # global msg_queue
-    # msg_queue = []
+    # initialize number of available ports
+    global num_ports
+    num_ports = 100 # make dynamic
 
-    # # initialize clock rate for process
-    # global clock_rate
-    # clock_rate = random.randint(1, 6)
 
-    # # initialize the probability of an event
-    # global events_prob
-    # events_prob = 10
+    # initialize the add_port and remove_port queues for the process
+    global add_port_queue
+    add_port_queue = []
 
-    # # initialize the logging for the process
-    # global logger
-    # logger = setup_custom_logger('process'+str(config[1]-5550))
-    # logger.info("Log set up for process "+str(config[1]-5550)+" with clock rate "+str(clock_rate))
-    # # print("logging initialized for process", config[1]-5550)
+    global remove_port_queue
+    remove_port_queue = []
+
+
 
     # initialize listeners
     init_thread = Thread(target=init_machine, args=(config,)) # start a thread for the consumer, to listen
     init_thread.start()
 
     #add delay to initialize the server-side logic on all processes
-    time.sleep(5)
+    time.sleep(3)
 
     # extensible to multiple producers, we just use one producer that connects to two threads though
     prod_thread = Thread(target=producer, args=(config[2], config[3],)) # start a thread for the producer, to send
     prod_thread.start()
+
+    # add delay to initialize the client-side logic on all processes
+    # time.sleep(3)
+    # add_port_queue.append(5555)
+    time.sleep(2)
+    remove_port_queue.append(5551)
  
 
 localHost= "127.0.0.1"
