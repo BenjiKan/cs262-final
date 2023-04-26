@@ -107,12 +107,12 @@ def machine(config):
     # if current server is a switch server, then it will listen for changes in the global edges list
     
     if my_port%10 == 1:
-        print("hi!")
-        while True:
-            if arr[0] == 5:
-                print("switch server", my_port, "is listening for changes in the global edges list")
-                arr[0] = 0
-                print(arr[:])
+        # print("hi!")
+        # while True:
+        #     if arr[0] == 5:
+        #         print("switch server", my_port, "is listening for changes in the global edges list")
+        #         arr[0] = 0
+        #         print(arr[:])
             # check if global edges list has changed; if so update the links
 
         # add delay to initialize the client-side logic on all processes
@@ -151,9 +151,9 @@ if __name__ == '__main__':
     p2.join()
     p3.join()
 
-    print("here")
-    time.sleep(12)
-    print("here2")
-    arr[0]=5
+    # print("here")
+    # time.sleep(12)
+    # print("here2")
+    # arr[0]=5
 
     
