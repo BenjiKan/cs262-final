@@ -1,6 +1,6 @@
 import socket
 from threading import Thread
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Array, Value
 import time
 
 import os
@@ -89,7 +89,8 @@ def machine(config):
     global remove_port_queue
     remove_port_queue = []
 
-
+    global my_port
+    my_port = config[1]
 
     # initialize listeners
     init_thread = Thread(target=init_machine, args=(config,)) # start a thread for the consumer, to listen
@@ -101,13 +102,27 @@ def machine(config):
     # extensible to multiple producers, we just use one producer that connects to two threads though
     prod_thread = Thread(target=producer, args=(config[2], config[3],)) # start a thread for the producer, to send
     prod_thread.start()
+    
+    arr = config[4]
+    # if current server is a switch server, then it will listen for changes in the global edges list
+    
+    if my_port%10 == 1:
+        print("hi!")
+        while True:
+            if arr[0] == 5:
+                print("switch server", my_port, "is listening for changes in the global edges list")
+                arr[0] = 0
+                print(arr[:])
+            # check if global edges list has changed; if so update the links
 
-    # add delay to initialize the client-side logic on all processes
-    # time.sleep(3)
-    # add_port_queue.append(5555)
-    time.sleep(2)
-    remove_port_queue.append(5551)
- 
+        # add delay to initialize the client-side logic on all processes
+        # time.sleep(3)
+        # add_port_queue.append(5555)
+        time.sleep(2)
+        remove_port_queue.append(5551)
+
+
+
 
 localHost= "127.0.0.1"
     
@@ -117,16 +132,17 @@ if __name__ == '__main__':
     port2 = 5552
     port3 = 5553
     
+    arr = Array('i', 10)
+    arr[0] = 5
 
     # each config is structured as [host, listening port, sending port 1, sending port 2]
-    config1=[localHost, port1, port2, port3]
+    config1=[localHost, port1, port2, port3, arr]
     p1 = Process(target=machine, args=(config1,))
-    config2=[localHost, port2, port3, port1]
+    config2=[localHost, port2, port3, port1, arr]
     p2 = Process(target=machine, args=(config2,))
-    config3=[localHost, port3, port1, port2]
+    config3=[localHost, port3, port1, port2, arr]
     p3 = Process(target=machine, args=(config3,))
     
-
     p1.start()
     p2.start()
     p3.start()
@@ -134,3 +150,10 @@ if __name__ == '__main__':
     p1.join()
     p2.join()
     p3.join()
+
+    print("here")
+    time.sleep(12)
+    print("here2")
+    arr[0]=5
+
+    
