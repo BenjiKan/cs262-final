@@ -6,7 +6,7 @@ import time
 import socket
 import random
 
-from graphs import *
+from multiple_sockets import *
 
 class TestHelpers(unittest.TestCase):
     def test_logger(self):
